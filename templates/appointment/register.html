@@ -1,0 +1,21 @@
+{% extends 'base.html' %}
+
+{% from 'appointment/common.html' import edit_field %}
+
+{% block title %}Register{% endblock title %}
+
+{% block main %}
+<div class="row">
+    <div class="appointment-edit well offset2 span8">
+        <form method="post" class="form-horizontal" action="">
+            <legend>Register</legend>
+            {{ edit_field(form.email, class="span3", type="email", placeholder="Enter email") }}
+            {{ edit_field(form.password, class="span3", type="password", placeholder="Your password") }}
+            {{ edit_field(form.confirm_password, class="span3", type="password", placeholder="Reenter password") }}
+            <div class="form-actions">
+                {{ form.submit(class="btn") }}
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock main %}
