@@ -2,11 +2,11 @@
 
 {% from 'appointment/common.html' import detail %}
 
-{% block title %}{{ appt.title }} or '(untitled)'{% endblock title %}
+{% block title %}{{ appt.title or '(untitled)' }}{% endblock title %}
 
 {% block main %}
 <div class="row">
-    <div class="span12">
+    <div class="col-sm-6">
         {{ detail(appt) }}
     </div>
 </div>

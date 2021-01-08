@@ -1,6 +1,5 @@
 {% extends 'base.html' %}
-
-{% from 'appointment/common.html' import edit_field %}
+{% import "bootstrap/wtf.html" as wtf %}
 
 {% if request.endpoint.endswith('edit') %}
 {% set title = 'Edit Appointment' %}
@@ -8,29 +7,13 @@
 {% set title = 'Add Appointment' %}
 {% endif %}
 
-{% block title %}{{ title }}{% endblock title %}
+{% block title %}{{ title }}{% endblock %}
 
 {% block main %}
 <div class="row">
-    <div class="appointment-edit well offset2 span8">
-        <form method="post" class="form-horizontal" action="">
-            <legend>{{ title }}</legend>
-            {{ edit_field(form.title, maxlength=255, class="span3",
-                    placeholder="Important Meeting") }}
-            {{ edit_field(form.start, class="span3", type="datetime",
-                    placeholder="yyyy-mm-dd hh:mm:ss") }}
-            {{ edit_field(form.end, class="span3", type="datetime",
-                    placeholder="yyyy-mm-dd hh:mm:ss") }}
-            {{ edit_field(form.allday) }}
-            {{ edit_field(form.location, maxlength=255, class="span3",
-                    placeholder="The Office") }}
-            {{ edit_field(form.description, rows="5", class="span5",
-                    placeholder="Bring a sharpened #2 pencil.") }}
-            <div class="form-actions">
-                <input type="submit" class="btn" value="Save">
-                or <a href="{{ url_for('appointment_list') }}">Cancel</a>
-            </div>
-        </form>
+    <div class="col-sm-6">
+        <h3>{{ title }}</h3>
+        {{ wtf.quick_form(form) }}
     </div>
 </div>
-{% endblock main %}
+{% endblock %}

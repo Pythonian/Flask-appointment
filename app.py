@@ -3,18 +3,22 @@ from datetime import datetime
 from flask import (Flask, abort, flash, jsonify, redirect, render_template,
                    url_for, request)
 
+from flask_bootstrap import Bootstrap
 from flask_login import (LoginManager, current_user, UserMixin,
                          login_required, login_user, logout_user)
 from flask_migrate import Migrate
 from flask_sqlalchemy import SQLAlchemy
 from flask_wtf import FlaskForm
-# from werkzeug import check_password_hash, generate_password_hash
+from werkzeug.security import check_password_hash, generate_password_hash
 from wtforms import (BooleanField, DateTimeField, StringField, TextAreaField,
                      PasswordField, SubmitField)
 from wtforms.validators import DataRequired, Length, Email, ValidationError
 
 from filters import do_date, do_datetime, do_duration, do_nl2br
 
+# Creates a Python object (WSGI) app
+# The __name__ argument tells Flask to look at the current
+# python module to find resources associated with the app
 app = Flask(__name__)
 
 app.config['SECRET_KEY'] = 'secret'
@@ -27,6 +31,7 @@ app.jinja_env.filters['duration'] = do_duration
 app.jinja_env.filters['nl2br'] = do_nl2br
 
 db = SQLAlchemy(app)
+bootstrap = Bootstrap(app)
 migrate = Migrate(app, db)
 
 login_manager = LoginManager()
@@ -52,8 +57,28 @@ class User(db.Model, UserMixin):
 
     id = db.Column(db.Integer, primary_key=True)
     email = db.Column(db.String(20), unique=True)
-    password = db.Column(db.String(20))
+    password_hash = db.Column(db.String(128))
     created = db.Column(db.DateTime, default=datetime.utcnow)
+
+    @property
+    def password(self):
+        """
+        Prevents password from being accessed
+        """
+        raise AttributeError('password is not a readable attribute.')
+
+    @password.setter
+    def password(self, password):
+        """
+        Set password to a hashed password
+        """
+        self.password_hash = generate_password_hash(password)
+
+    def verify_password(self, password):
+        """
+        Check if hashed password matches actual password
+        """
+        return check_password_hash(self.password_hash, password)
 
     def __repr__(self):
         return f'<User: {self.email}>'
@@ -92,6 +117,7 @@ class Appointment(db.Model):
         return delta.days * 24 * 60 * 60 + delta.seconds
 
     def __repr__(self):
+        # <Appointment: 1>
         return (u'<{self.__class__.__name__}: {self.id}>'.format(self=self))
 
 
@@ -111,8 +137,8 @@ class RegisterForm(FlaskForm):
     confirm_password = PasswordField()
     submit = SubmitField('Register')
 
-    def validate_email(self, data):
-        if User.query.filter_by(email=self.field.data).first():
+    def validate_email(self, field):
+        if User.query.filter_by(email=field.data).first():
             raise ValidationError("This email already exists.")
 
 
@@ -131,6 +157,7 @@ class AppointmentForm(FlaskForm):
     allday = BooleanField('All Day')
     location = StringField('Location', validators=[Length(max=255)])
     description = TextAreaField('Description')
+    submit = SubmitField('Submit')
 
 
 # Views
@@ -150,7 +177,7 @@ def appointment_list():
 def appointment_detail(appointment_id):
     """Provide HTML page with all details on a given appointment."""
     # Query: get Appointment object by ID.
-    appt = Appointment.query.get(appointment_id).first_or_404()
+    appt = Appointment.query.get_or_404(appointment_id)
     if appt.user_id != current_user.id:
         # Abort with Not Found.
         abort(404)
@@ -170,7 +197,7 @@ def appointment_create():
             allday=form.allday.data,
             location=form.location.data,
             description=form.description.data,
-            user_id=current_user.id._get_current_object()
+            user_id=current_user.id
         )
         db.session.add(appt)
         db.session.commit()
@@ -183,9 +210,9 @@ def appointment_create():
 @login_required
 def appointment_edit(appointment_id):
     """Provide HTML form to edit a given appointment."""
-    appt = Appointment.query.get(appointment_id).first_or_404()
+    appt = Appointment.query.get_or_404(appointment_id)
     if appt.user_id != current_user.id:
-        abort(403)
+        abort(404)
     form = AppointmentForm(obj=appt)
     if form.validate_on_submit():
         form.populate_obj(appt)
@@ -198,7 +225,7 @@ def appointment_edit(appointment_id):
 @login_required
 def appointment_delete(appointment_id):
     """Delete a record using HTTP DELETE, respond with JSON for JavaScript."""
-    appt = Appointment.query.get(appointment_id).first_or_404()
+    appt = Appointment.query.get_or_404(appointment_id)
     if appt is None:
         # Abort with simple response indicating appointment not found.
         response = jsonify({'status': 'Not Found'})
@@ -222,7 +249,7 @@ def login():
     if form.validate_on_submit():
         user = User.query.filter_by(email=form.email.data).first()
         if user is not None and user.verify_password(form.password.data):
-            login_user(user, remember=form.remember.data)
+            login_user(user)
             next_page = request.args.get('next')
             flash('You have been logged in', 'success')
             return redirect(next_page) if next_page else redirect(

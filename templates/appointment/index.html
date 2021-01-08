@@ -7,11 +7,11 @@
 {% block main %}
 <div class="row">
     {% for appt in appts %}
-    <div class="span12">
+    <div class="col-sm-6">
         {{ detail(appt, link_title=true, show_edit=false, show_description=false) }}
     </div>
     {% else %}
-    <h3 class="span12">No appointments.</h3>
+    <h3>No appointments.</h3>
     {% endfor %}
 </div>
 {% endblock main %}

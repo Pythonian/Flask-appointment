@@ -1,20 +1,13 @@
 {% extends 'base.html' %}
+{% import "bootstrap/wtf.html" as wtf %}
 
-{% from 'appointment/common.html' import edit_field %}
-
-{% block title %}Login{% endblock title %}
+{% block title %}Login{% endblock %}
 
 {% block main %}
 <div class="row">
-    <div class="appointment-edit well offset2 span8">
-        <form method="post" class="form-horizontal" action="">
-            <legend>Login</legend>
-            {{ edit_field(form.email, class="span3", type="email", placeholder="Enter email") }}
-            {{ edit_field(form.password, class="span3", type="password", placeholder="Your password") }}
-            <div class="form-actions">
-                {{ form.submit(class="btn") }}
-            </div>
-        </form>
+    <div class="col-sm-6">
+        <h3>Login</h3>
+        {{ wtf.quick_form(form) }}
     </div>
 </div>
-{% endblock main %}
+{% endblock %}
